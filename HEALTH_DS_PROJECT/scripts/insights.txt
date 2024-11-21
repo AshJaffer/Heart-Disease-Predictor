@@ -1,0 +1,40 @@
+Insights from the Output
+Heart Data
+Structure:
+
+319,795 entries, 18 columns.
+Includes key variables like MentalHealth, PhysicalActivity, SleepTime, and more.
+Mental Health and Sleep Insights:
+
+MentalHealth (average of ~3.9 days of poor mental health):
+Highly skewed toward lower values (median = 0).
+Maximum of 30 days indicates potential outliers.
+SleepTime (average of ~7.1 hours):
+Mostly within the recommended range of 6-8 hours.
+Minimum of 1 hour and maximum of 24 hours suggest possible data quality issues.
+Memory Usage:
+
+43.9 MB, manageable for processing.
+Sleep and Lifestyle Data
+Structure:
+
+374 entries, 13 columns.
+Smaller dataset, but rich in lifestyle-related features like sleep_duration, physical_activity_level, stress_level, and daily_steps.
+Lifestyle Insights:
+
+sleep_duration: Average of ~7.1 hours, well-aligned with the Heart dataset.
+physical_activity_level: Ranges from 30 to 90, indicating variability in activity levels.
+stress_level: Average of ~5.4 on a scale (likely 1-10), with potential to study correlations with sleep and activity.
+sleep_disorder: 155 non-null values suggest missing data (~41% nulls).
+Memory Usage:
+
+Only 38 KB, very light for analysis.
+Immediate Observations
+Potential Relationships to Explore:
+
+Correlation between physical_activity_level (Sleep dataset) and PhysicalActivity (Heart dataset).
+Effects of sleep_duration and SleepTime on MentalHealth.
+Data Quality Issues:
+
+Outliers in SleepTime (Heart dataset).
+Missing values in sleep_disorder (Sleep dataset).
