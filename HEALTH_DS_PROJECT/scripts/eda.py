@@ -52,4 +52,4 @@ if not merged_data.empty:
 else:
     print("Merged dataset is empty. Skipping merged data analysis.")
 
-print("EDA Completed.")
+print("EDA finished.")
