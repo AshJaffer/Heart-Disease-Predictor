@@ -53,3 +53,48 @@ else:
     print("Merged dataset is empty. Skipping merged data analysis.")
 
 print("EDA finished.")
+
+# Retain the existing EDA code here (dataset preview, initial plots, etc.)
+
+# Add the new code for feature distribution, correlation, and categorical analysis
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load Processed Dataset
+data = pd.read_csv("data/processed/merged_data.csv")
+
+# New code for distributions, class imbalance, correlations, etc.
+numerical_features = ['bmi', 'physical activity level', 'sleeptime', 'quality of sleep']
+for feature in numerical_features:
+    plt.figure(figsize=(8, 5))
+    sns.histplot(data[feature], kde=True, bins=30)
+    plt.title(f"Distribution of {feature}")
+    plt.savefig(f"plots/{feature}_distribution.png")
+    plt.show()
+
+# Class distribution
+plt.figure(figsize=(8, 5))
+sns.countplot(x='health_status', data=data)
+plt.title("Distribution of Health Status")
+plt.savefig("plots/health_status_distribution.png")
+plt.show()
+
+# Correlation matrix
+plt.figure(figsize=(10, 8))
+correlation_matrix = data.corr(numeric_only=True)
+sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Correlation Matrix")
+plt.savefig("plots/correlation_matrix.png")
+plt.show()
+
+# Categorical analysis
+categorical_features = ['genhealth', 'smoking', 'alcoholdrinking']
+for feature in categorical_features:
+    plt.figure(figsize=(8, 5))
+    sns.countplot(x=feature, hue='health_status', data=data)
+    plt.title(f"{feature} vs Health Status")
+    plt.savefig(f"plots/{feature}_vs_health_status.png")
+    plt.show()
+
+
