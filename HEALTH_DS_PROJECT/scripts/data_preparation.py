@@ -1,38 +1,19 @@
 import pandas as pd
-import numpy as np  # Use NumPy directly
+import numpy as np
 
-# Load datasets
-heart_data = pd.read_csv("data/processed/heart_cleaned.csv")
-sleep_data = pd.read_csv("data/processed/sleep_cleaned.csv")
+# Load dataset
+data = pd.read_csv("data/processed/merged_data.csv")
+print(f"Initial dataset shape: {data.shape}")
 
-# Preview columns for verification
-print("Heart Data Columns:", heart_data.columns)
-print("Sleep Data Columns:", sleep_data.columns)
+# Drop unnecessary columns
+columns_to_remove = ['genhealth', 'health_status', 'kidneydisease', 'skincancer']
+data = data.drop(columns=columns_to_remove, errors='ignore')
+print(f"Dataset shape after dropping low-impact columns: {data.shape}")
 
-# Engineer health status for heart data
-heart_data['health_status'] = np.where(
-    (heart_data['physicalactivity'] == 'Yes') & (heart_data['genhealth'] == 'Very good'),
-    'healthy',
-    np.where(
-        (heart_data['physicalactivity'] == 'No') | (heart_data['genhealth'].isin(['Fair', 'Poor'])),
-        'unhealthy',
-        'moderate'
-    )
-)
+# Handle missing values
+data = data.dropna()  # Drop rows with NaN values
+print(f"Dataset shape after dropping rows with missing values: {data.shape}")
 
-# Engineer health status for sleep data
-sleep_data['health_status'] = np.where(
-    (sleep_data['physical activity level'] > 60) & (sleep_data['sleep duration'] >= 7),
-    'healthy',
-    np.where(
-        (sleep_data['physical activity level'] < 30) | (sleep_data['sleep duration'] < 5),
-        'unhealthy',
-        'moderate'
-    )
-)
-
-# Save processed datasets
-heart_data.to_csv("data/processed/heart_prepared.csv", index=False)
-sleep_data.to_csv("data/processed/sleep_prepared.csv", index=False)
-
-print("Heart data and sleep data have been processed and saved.")
+# Save the cleaned dataset
+data.to_csv("data/processed/heart_cleaned.csv", index=False)
+print("Data preparation complete. Cleaned dataset saved.")
