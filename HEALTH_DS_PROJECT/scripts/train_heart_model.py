@@ -1,64 +1,91 @@
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.class_weight import compute_class_weight
-from imblearn.over_sampling import SMOTE
-from sklearn.metrics import classification_report, accuracy_score
 import joblib
-import os
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from imblearn.over_sampling import SMOTE
 
-# Load cleaned dataset
-data = pd.read_csv("data/processed/heart_cleaned_v2.csv")
+# Load the dataset
+data = pd.read_csv("data/processed/merged_data_v2.csv")
+print(f"Dataset Shape: {data.shape}")
 
-# Standardize column names
-data.columns = data.columns.str.lower()
+# Drop rows with NaN values
+data = data.dropna()
+print(f"Dataset Shape after dropping NaN rows: {data.shape}")
 
-# Identify categorical columns
-categorical_columns = ['heartdisease', 'smoking', 'alcoholdrinking', 'stroke', 'diffwalking', 'sex',
-                       'agecategory', 'race', 'diabetic', 'asthma']
+# Drop unnecessary columns
+columns_to_drop = ["gender", "occupation"]
+data = data.drop(columns=columns_to_drop, errors="ignore")
 
-# Encode categorical variables
-label_encoders = {}
-for column in categorical_columns:
-    le = LabelEncoder()
-    data[column] = le.fit_transform(data[column])
-    label_encoders[column] = le
+# Encode categorical columns
+categorical_columns = [
+    "Smoking", "AlcoholDrinking", "Stroke", "DiffWalking", "Sex",
+    "AgeCategory", "Race", "Diabetic", "Asthma", "PhysicalActivity",
+    "bmi_category", "sleep_disorder"
+]
 
-# Convert 'physicalactivity' to numeric if not already
-if data["physicalactivity"].dtype == "object":
-    data["physicalactivity"] = data["physicalactivity"].map({"Yes": 1, "No": 0})
+# Initialize encoders
+encoders = {}
+for col in categorical_columns:
+    try:
+        # Load existing encoders
+        encoders[col] = joblib.load(f"models/{col}_encoder.pkl")
+        data[col] = encoders[col].transform(data[col])
+        print(f"Encoded column: {col}")
+    except FileNotFoundError:
+        # Create and save new encoder if not found
+        print(f"Encoder for {col} not found. Creating a new one.")
+        encoder = LabelEncoder()
+        data[col] = encoder.fit_transform(data[col])
+        encoders[col] = encoder
+        joblib.dump(encoder, f"models/{col}_encoder.pkl")
 
-# Split data into features (X) and target (y)
-X = data.drop(columns=["heartdisease"])
-y = data["heartdisease"]
+# Encode target column
+target_column = "HeartDisease"
+if target_column in data.columns:
+    try:
+        target_encoder = joblib.load(f"models/{target_column}_encoder.pkl")
+        data[target_column] = target_encoder.transform(data[target_column])
+    except FileNotFoundError:
+        print(f"Encoder for {target_column} not found. Creating a new one.")
+        target_encoder = LabelEncoder()
+        data[target_column] = target_encoder.fit_transform(data[target_column])
+        joblib.dump(target_encoder, f"models/{target_column}_encoder.pkl")
+else:
+    raise ValueError(f"Target column '{target_column}' is missing from the dataset.")
 
-# Split into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+# Define features and target
+X = data.drop("HeartDisease", axis=1)
+y = data["HeartDisease"]
 
-# Handle class imbalance using SMOTE
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print(f"Train shape: {X_train.shape} Test shape: {X_test.shape}")
+
+# Handle imbalance with SMOTE
 smote = SMOTE(random_state=42)
 X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+print(f"SMOTE applied. Train shape: {X_train_smote.shape}")
 
-# Compute class weights
-class_weights = compute_class_weight(class_weight="balanced", classes=np.unique(y_train), y=y_train)
-class_weights_dict = {i: class_weights[i] for i in range(len(class_weights))}
+# Scale the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_smote)
+X_test_scaled = scaler.transform(X_test)
 
-# Train Random Forest model
-model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight=class_weights_dict)
-model.fit(X_train_smote, y_train_smote)
+# Train the model
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train_scaled, y_train_smote)
 
 # Evaluate the model
-y_pred = model.predict(X_test)
-print("Classification Report:\n", classification_report(y_test, y_pred))
-print("Accuracy Score:", accuracy_score(y_test, y_pred))
+y_pred = model.predict(X_test_scaled)
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
 
-# Save the model, scalers, and label encoders
-output_dir = "models"
-os.makedirs(output_dir, exist_ok=True)
+# Save the model, scaler, and encoders
+joblib.dump(model, "models/heart_model_v5.pkl")
+joblib.dump(scaler, "models/scaler_v5.pkl")
+joblib.dump(encoders, "models/label_encoders_v5.pkl")
+joblib.dump(list(X.columns), "models/heart_feature_names.pkl")
 
-joblib.dump(model, os.path.join(output_dir, "heart_model.pkl"))
-joblib.dump(label_encoders, os.path.join(output_dir, "heart_label_encoders.pkl"))
-joblib.dump(X.columns.tolist(), os.path.join(output_dir, "heart_feature_names.pkl"))
-print("Model, label encoders, and feature names saved successfully!")
+print("Model, scaler, and encoders saved successfully!")
