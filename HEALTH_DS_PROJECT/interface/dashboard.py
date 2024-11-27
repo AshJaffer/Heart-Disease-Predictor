@@ -25,7 +25,15 @@ sex = st.selectbox("Sex", encoders["Sex"].classes_)
 diabetic = st.selectbox("Diabetic", ["No", "Yes"])
 asthma = st.selectbox("Asthma", ["No", "Yes"])
 bmi_category = st.selectbox("BMI Category", encoders["bmi_category"].classes_)
-sleep_disorder = st.selectbox("Sleep Disorder", encoders["sleep_disorder"].classes_)
+
+# Display Sleep Disorder choices as descriptive strings
+sleep_disorder_map = {
+    "No sleep disorder": 0,
+    "Insomnia": 1,
+    "Sleep Apnea": 2
+}
+sleep_disorder_choice = st.selectbox("Sleep Disorder", list(sleep_disorder_map.keys()))
+sleep_disorder = sleep_disorder_map[sleep_disorder_choice]
 
 # Default placeholders for uncollected features
 default_values = {
@@ -66,7 +74,7 @@ try:
     categorical_columns = [
         "Smoking", "AlcoholDrinking", "Stroke", "DiffWalking",
         "Sex", "AgeCategory", "Race", "Diabetic", "Asthma",
-        "PhysicalActivity", "bmi_category", "sleep_disorder"
+        "PhysicalActivity", "bmi_category"
     ]
 
     for col in categorical_columns:
