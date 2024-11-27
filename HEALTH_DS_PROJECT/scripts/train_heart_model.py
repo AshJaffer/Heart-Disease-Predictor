@@ -1,9 +1,13 @@
+# train_heart_model.py
 import pandas as pd
 import joblib
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
+from sklearn.inspection import permutation_importance
 from imblearn.over_sampling import SMOTE
 
 # Load the dataset
@@ -14,22 +18,18 @@ print(f"Dataset Shape: {data.shape}")
 data = data.dropna()
 print(f"Dataset Shape after dropping NaN rows: {data.shape}")
 
-# Drop unnecessary columns - note both variations of BMI category
+# Drop unnecessary columns
 columns_to_drop = ["gender", "occupation", "bmi_category", "BMI Category", "blood_pressure"]
 data = data.drop(columns=columns_to_drop, errors="ignore")
 print(f"Dataset Shape after dropping unnecessary columns: {data.shape}")
 
-# Map `sleep_disorder` to numeric values if not already encoded
-sleep_disorder_map = {
-    "No sleep disorder": 0,
-    "Insomnia": 1,
-    "Sleep Apnea": 2
-}
+# Map `sleep_disorder` to numeric values
+sleep_disorder_map = {"No sleep disorder": 0, "Insomnia": 1, "Sleep Apnea": 2}
 if data["sleep_disorder"].dtype == "object":
     print("Encoding 'sleep_disorder' values...")
     data["sleep_disorder"] = data["sleep_disorder"].map(sleep_disorder_map)
 
-# Ensure all numeric columns are float
+# Ensure numeric columns are float
 numeric_columns = ["BMI", "PhysicalHealth", "MentalHealth", "SleepTime", 
                   "person_id", "age", "sleep_duration", "quality_of_sleep",
                   "physical_activity_level", "stress_level", "heart_rate",
@@ -44,7 +44,6 @@ categorical_columns = [
     "AgeCategory", "Race", "Diabetic", "Asthma", "PhysicalActivity"
 ]
 
-# Initialize encoders
 encoders = {}
 for col in categorical_columns:
     try:
@@ -76,9 +75,6 @@ else:
 X = data.drop("HeartDisease", axis=1)
 y = data["HeartDisease"]
 
-# Validate feature names
-print(f"Feature columns before training: {X.columns.tolist()}")
-
 # Split the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 print(f"Train shape: {X_train.shape} Test shape: {X_test.shape}")
@@ -102,10 +98,37 @@ y_pred = model.predict(X_test_scaled)
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 
+# Calculate feature importance
+importances = model.feature_importances_
+std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
+
+# Calculate permutation importance
+perm_importance = permutation_importance(model, X_test_scaled, y_test, n_repeats=10)
+
+# Create and save feature importance DataFrame
+feature_importance_df = pd.DataFrame({
+    'feature': X.columns,
+    'importance': importances,
+    'std': std,
+    'perm_importance': perm_importance.importances_mean,
+    'perm_std': perm_importance.importances_std
+}).sort_values('importance', ascending=False)
+
+feature_importance_df.to_csv('models/feature_importance.csv', index=False)
+
+# Create feature importance plot
+plt.figure(figsize=(12, 6))
+plt.bar(range(len(importances)), importances, yerr=std, align='center')
+plt.xticks(range(len(importances)), X.columns, rotation=45, ha='right')
+plt.title('Feature Importance (Mean Decrease in Impurity)')
+plt.tight_layout()
+plt.savefig('models/feature_importance.png')
+plt.close()
+
 # Save the model, scaler, and encoders
-joblib.dump(model, "models/heart_model_v6.pkl")
-joblib.dump(scaler, "models/scaler_v6.pkl")
-joblib.dump(encoders, "models/label_encoders_v6.pkl")
+joblib.dump(model, "models/heart_model_v7.pkl")
+joblib.dump(scaler, "models/scaler_v7.pkl")
+joblib.dump(encoders, "models/label_encoders_v7.pkl")
 joblib.dump(list(X.columns), "models/heart_feature_names.pkl")
 
-print("Model, scaler, and encoders saved successfully!")
+print("Model, scaler, encoders, and feature importance analysis saved successfully!")
