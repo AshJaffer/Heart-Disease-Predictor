@@ -1,39 +1,11 @@
-import pandas as pd
-import numpy as np  # Explicitly import NumPy
+import joblib
 
-# Load the processed dataset
-data = pd.read_csv("data/processed/processed_for_ml.csv")
+# Load the trained model
+model = joblib.load("models/heart_model_final.pkl")  # Adjust the path if needed
 
-# Display all column names
-print("Columns in the dataset:")
-print(data.columns)
-
-# Check the distribution of the 'health_status' column
-print("\nHealth Status Column Unique Values:")
-print(data['health_status'].value_counts(dropna=False))
-
-# Inspect the 'physical activity level' and 'sleep duration' columns
-print("\nPhysical Activity Level Distribution:")
-print(data['physical activity level'].describe())
-
-print("\nSleep Duration Distribution:")
-print(data['sleep duration'].describe())
-
-# Check for missing values in key columns
-print("\nNull Values Check:")
-print(data[['physical activity level', 'sleep duration']].isnull().sum())
-
-# Fill missing values for debugging (temporary step for inspection)
-data['physical activity level'] = data['physical activity level'].fillna(0)
-data['sleep duration'] = data['sleep duration'].fillna(0)
-
-# Re-evaluate 'health_status' column logic (for validation)
-data['health_status'] = np.where(
-    (data['physical activity level'] > 60) & (data['sleep duration'] >= 7),
-    "healthy",
-    "unhealthy"
-)
-
-# Check if 'health_status' is properly populated
-print("\nRevised Health Status Column Unique Values:")
-print(data['health_status'].value_counts(dropna=False))
+# Print the feature names
+print("Feature names used during model training:")
+if hasattr(model, "feature_names_in_"):
+    print(model.feature_names_in_)  # Most models trained with Scikit-learn have this attribute
+else:
+    print("The model does not have 'feature_names_in_' attribute. Ensure feature names were saved during training.")

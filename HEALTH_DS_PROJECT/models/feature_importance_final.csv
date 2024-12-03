@@ -1,0 +1,45 @@
+feature,importance
+age_numeric,0.18620074
+health_risk_score,0.15451644
+sex_Male,0.059523355
+bmi_age,0.05707041
+physical_health,0.0488435
+sleep_time,0.043094337
+mental_health,0.040216323
+age_category_75-79,0.039255682
+smoking_Yes,0.03902707
+age_category_80 or older,0.033621863
+stroke_Yes,0.02478962
+diff_walking_Yes,0.020258922
+race_Black,0.017867206
+diabetic_Yes,0.017461564
+race_Asian,0.017450146
+race_Hispanic,0.01729207
+race_Other,0.017280586
+asthma_Yes,0.016619802
+race_White,0.016318327
+physical_activity_Yes,0.014095967
+age_category_60-64,0.01358261
+age_category_50-54,0.01216079
+age_category_40-44,0.0121395225
+age_category_45-49,0.011448459
+age_category_25-29,0.008044924
+bmi,0.00720132
+age_category_65-69,0.0070450287
+alcohol_drinking_Yes,0.0059571806
+age_category_30-34,0.0058149695
+age_category_35-39,0.004763594
+age_category_55-59,0.004619273
+bp_systolic,0.004613734
+age_category_70-74,0.0045569646
+stress_level,0.004501706
+age_bmi_risk,0.004334302
+"diabetic_No, borderline diabetes",0.0034519783
+diabetic_Yes (during pregnancy),0.0029474692
+sleep_quality,0.0020122558
+heart_rate,0.0
+daily_steps,0.0
+physical_activity_level,0.0
+bp_diastolic,0.0
+activity_stress,0.0
+high_age_risk,0.0

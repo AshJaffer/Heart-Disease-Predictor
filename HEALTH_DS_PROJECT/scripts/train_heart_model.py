@@ -1,134 +1,151 @@
-# train_heart_model.py
 import pandas as pd
-import joblib
 import numpy as np
+import joblib
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
-from sklearn.inspection import permutation_importance
-from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import (
+    classification_report, confusion_matrix, 
+    roc_curve, auc, precision_recall_curve
+)
+from scipy.stats import randint, uniform
 
-# Load the dataset
-data = pd.read_csv("data/processed/merged_data_v2.csv", low_memory=False)
-print(f"Dataset Shape: {data.shape}")
+def plot_feature_importance(model, feature_names, output_path="models/feature_importance.png"):
+    """Plot feature importance."""
+    importances = model.feature_importances_
+    indices = np.argsort(importances)[::-1]
 
-# Drop rows with NaN values
-data = data.dropna()
-print(f"Dataset Shape after dropping NaN rows: {data.shape}")
+    plt.figure(figsize=(12, 8))
+    plt.title("Feature Importances")
+    plt.bar(range(len(importances)), importances[indices])
+    plt.xticks(range(len(importances)), [feature_names[i] for i in indices], rotation=45, ha='right')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
 
-# Drop unnecessary columns
-columns_to_drop = ["gender", "occupation", "bmi_category", "BMI Category", "blood_pressure"]
-data = data.drop(columns=columns_to_drop, errors="ignore")
-print(f"Dataset Shape after dropping unnecessary columns: {data.shape}")
+def plot_confusion_matrix(y_true, y_pred, output_path="models/confusion_matrix.png"):
+    """Plot confusion matrix."""
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    plt.title('Confusion Matrix')
+    plt.ylabel('True Label')
+    plt.xlabel('Predicted Label')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
 
-# Map `sleep_disorder` to numeric values
-sleep_disorder_map = {"No sleep disorder": 0, "Insomnia": 1, "Sleep Apnea": 2}
-if data["sleep_disorder"].dtype == "object":
-    print("Encoding 'sleep_disorder' values...")
-    data["sleep_disorder"] = data["sleep_disorder"].map(sleep_disorder_map)
+def plot_roc_curve(y_true, y_pred_proba, output_path="models/roc_curve.png"):
+    """Plot ROC curve."""
+    fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
+    roc_auc = auc(fpr, tpr)
 
-# Ensure numeric columns are float
-numeric_columns = ["BMI", "PhysicalHealth", "MentalHealth", "SleepTime", 
-                  "person_id", "age", "sleep_duration", "quality_of_sleep",
-                  "physical_activity_level", "stress_level", "heart_rate",
-                  "daily_steps", "blood_pressure_upper", "blood_pressure_lower"]
-for col in numeric_columns:
-    if col in data.columns:
-        data[col] = pd.to_numeric(data[col], errors='coerce')
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend(loc="lower right")
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
 
-# Encode categorical columns
-categorical_columns = [
-    "Smoking", "AlcoholDrinking", "Stroke", "DiffWalking", "Sex",
-    "AgeCategory", "Race", "Diabetic", "Asthma", "PhysicalActivity"
-]
+def train_model():
+    # Load prepared data
+    X_train = joblib.load("data/processed/X_train.pkl")
+    X_test = joblib.load("data/processed/X_test.pkl")
+    y_train = joblib.load("data/processed/y_train.pkl")
+    y_test = joblib.load("data/processed/y_test.pkl")
 
-encoders = {}
-for col in categorical_columns:
+    print("Training set shape:", X_train.shape)
+    print("Test set shape:", X_test.shape)
+
+    # Define hyperparameter search space
+    param_dist = {
+        'n_estimators': randint(100, 500),
+        'max_depth': [None] + list(range(10, 50, 5)),
+        'min_samples_split': randint(2, 20),
+        'min_samples_leaf': randint(1, 10),
+        'max_features': ['sqrt', 'log2', None],
+        'class_weight': ['balanced', 'balanced_subsample'],
+        'criterion': ['gini', 'entropy'],
+        'bootstrap': [True, False]
+    }
+
+    # Initialize Random Forest
+    rf = RandomForestClassifier(random_state=42)
+
+    # Random search with cross-validation
+    random_search = RandomizedSearchCV(
+        rf, param_distributions=param_dist,
+        n_iter=100, cv=5, scoring='roc_auc',
+        n_jobs=-1, random_state=42, verbose=1
+    )
+
+    # Fit model
+    print("\nPerforming hyperparameter search...")
+    random_search.fit(X_train, y_train)
+
+    # Get best model
+    best_model = random_search.best_estimator_
+    print("\nBest parameters:", random_search.best_params_)
+
+    # Make predictions
+    y_pred = best_model.predict(X_test)
+    y_pred_proba = best_model.predict_proba(X_test)[:, 1]
+
+    # Print classification report
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_pred))
+
+    # Generate and save plots
+    plot_feature_importance(best_model, X_train.columns)
+    plot_confusion_matrix(y_test, y_pred)
+    plot_roc_curve(y_test, y_pred_proba)
+
+    # Save feature importance scores
+    feature_importance = pd.DataFrame({
+        'feature': X_train.columns,
+        'importance': best_model.feature_importances_
+    }).sort_values('importance', ascending=False)
+    
+    feature_importance.to_csv('models/feature_importance.csv', index=False)
+
+    # Save model and important thresholds
+    threshold_metrics = pd.DataFrame({
+        'threshold': np.arange(0.1, 1.0, 0.1),
+        'precision': [precision_score(y_test, y_pred_proba >= thresh) for thresh in np.arange(0.1, 1.0, 0.1)],
+        'recall': [recall_score(y_test, y_pred_proba >= thresh) for thresh in np.arange(0.1, 1.0, 0.1)]
+    })
+    threshold_metrics.to_csv('models/threshold_metrics.csv', index=False)
+
+    joblib.dump(best_model, "models/heart_model_improved.pkl")
+    print("\nModel saved as 'heart_model_improved.pkl'")
+
+    return best_model, feature_importance, threshold_metrics
+
+if __name__ == "__main__":
+    # Import these here to avoid circular imports
+    from sklearn.metrics import precision_score, recall_score
+    import os
+
+    # Create models directory if it doesn't exist
+    os.makedirs("models", exist_ok=True)
+
     try:
-        encoders[col] = joblib.load(f"models/{col}_encoder.pkl")
-        data[col] = encoders[col].transform(data[col])
-        print(f"Encoded column: {col}")
-    except FileNotFoundError:
-        print(f"Encoder for {col} not found. Creating a new one.")
-        encoder = LabelEncoder()
-        data[col] = encoder.fit_transform(data[col])
-        encoders[col] = encoder
-        joblib.dump(encoder, f"models/{col}_encoder.pkl")
-
-# Encode target column
-target_column = "HeartDisease"
-if target_column in data.columns:
-    try:
-        target_encoder = joblib.load(f"models/{target_column}_encoder.pkl")
-        data[target_column] = target_encoder.transform(data[target_column])
-    except FileNotFoundError:
-        print(f"Encoder for {target_column} not found. Creating a new one.")
-        target_encoder = LabelEncoder()
-        data[target_column] = target_encoder.fit_transform(data[target_column])
-        joblib.dump(target_encoder, f"models/{target_column}_encoder.pkl")
-else:
-    raise ValueError(f"Target column '{target_column}' is missing from the dataset.")
-
-# Define features and target
-X = data.drop("HeartDisease", axis=1)
-y = data["HeartDisease"]
-
-# Split the data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print(f"Train shape: {X_train.shape} Test shape: {X_test.shape}")
-
-# Handle imbalance with SMOTE
-smote = SMOTE(random_state=42)
-X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
-print(f"SMOTE applied. Train shape: {X_train_smote.shape}")
-
-# Scale the features
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train_smote)
-X_test_scaled = scaler.transform(X_test)
-
-# Train the model
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train_scaled, y_train_smote)
-
-# Evaluate the model
-y_pred = model.predict(X_test_scaled)
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred))
-
-# Calculate feature importance
-importances = model.feature_importances_
-std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
-
-# Calculate permutation importance
-perm_importance = permutation_importance(model, X_test_scaled, y_test, n_repeats=10)
-
-# Create and save feature importance DataFrame
-feature_importance_df = pd.DataFrame({
-    'feature': X.columns,
-    'importance': importances,
-    'std': std,
-    'perm_importance': perm_importance.importances_mean,
-    'perm_std': perm_importance.importances_std
-}).sort_values('importance', ascending=False)
-
-feature_importance_df.to_csv('models/feature_importance.csv', index=False)
-
-# Create feature importance plot
-plt.figure(figsize=(12, 6))
-plt.bar(range(len(importances)), importances, yerr=std, align='center')
-plt.xticks(range(len(importances)), X.columns, rotation=45, ha='right')
-plt.title('Feature Importance (Mean Decrease in Impurity)')
-plt.tight_layout()
-plt.savefig('models/feature_importance.png')
-plt.close()
-
-# Save the model, scaler, and encoders
-joblib.dump(model, "models/heart_model_v7.pkl")
-joblib.dump(scaler, "models/scaler_v7.pkl")
-joblib.dump(encoders, "models/label_encoders_v7.pkl")
-joblib.dump(list(X.columns), "models/heart_feature_names.pkl")
-
-print("Model, scaler, encoders, and feature importance analysis saved successfully!")
+        best_model, feature_importance, threshold_metrics = train_model()
+        
+        # Print top 10 most important features
+        print("\nTop 10 Most Important Features:")
+        print(feature_importance.head(10))
+        
+        # Print threshold analysis
+        print("\nThreshold Analysis:")
+        print(threshold_metrics)
+        
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
