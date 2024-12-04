@@ -3,73 +3,80 @@ import pandas as pd
 import numpy as np
 import joblib
 
-FEATURE_NAMES = [
-    "bmi", "physical_health", "mental_health", "sleep_time", "heart_rate",
-    "stress_level", "physical_activity_level", "sleep_quality", "daily_steps",
-    "bp_systolic", "bp_diastolic", "age_numeric", "bmi_age", "activity_stress",
-    "smoking_Yes", "alcohol_drinking_Yes", "stroke_Yes", "diff_walking_Yes",
-    "sex_Male", "age_category_25-29", "age_category_30-34", "age_category_35-39",
-    "age_category_40-44", "age_category_45-49", "age_category_50-54",
-    "age_category_55-59", "age_category_60-64", "age_category_65-69",
-    "age_category_70-74", "age_category_75-79", "age_category_80 or older",
-    "race_Asian", "race_Black", "race_Hispanic", "race_Other", "race_White",
-    "diabetic_No, borderline diabetes", "diabetic_Yes", 
-    "diabetic_Yes (during pregnancy)", "physical_activity_Yes", "asthma_Yes",
-    "age_bmi_risk", "health_risk_score", "high_age_risk"
+FEATURE_ORDER = [
+    'bmi', 'physical_health', 'mental_health', 'sleep_time', 'heart_rate',
+    'stress_level', 'physical_activity_level', 'sleep_quality', 'daily_steps',
+    'bp_systolic', 'bp_diastolic', 'age_numeric', 'bmi_age', 'activity_stress',
+    'smoking_Yes', 'alcohol_drinking_Yes', 'stroke_Yes', 'diff_walking_Yes',
+    'sex_Male', 'age_category_25-29', 'age_category_30-34', 'age_category_35-39',
+    'age_category_40-44', 'age_category_45-49', 'age_category_50-54',
+    'age_category_55-59', 'age_category_60-64', 'age_category_65-69',
+    'age_category_70-74', 'age_category_75-79', 'age_category_80 or older',
+    'race_Asian', 'race_Black', 'race_Hispanic', 'race_Other', 'race_White',
+    'diabetic_No, borderline diabetes', 'diabetic_Yes', 
+    'diabetic_Yes (during pregnancy)', 'physical_activity_Yes', 'asthma_Yes',
+    'age_bmi_risk', 'health_risk_score', 'high_age_risk'
 ]
 
 def load_model():
-    """Load the trained model and associated data."""
     model_data = joblib.load("models/heart_model_final.pkl")
     return model_data['model'], model_data['threshold'], model_data['scaler']
 
 def create_feature_vector(age_numeric, bmi, physical_health, mental_health, sleep_time,
                          smoking, stroke, diff_walking, sex_male, diabetic, physical_activity):
-    """Create feature vector matching exact model features."""
-    features = {name: 0 for name in FEATURE_NAMES}  # Initialize all features to 0
-
-    # Set basic measurements
+    """Create feature vector with exact ordering."""
+    features = {feature: 0 for feature in FEATURE_ORDER}
+    
+    # Update with actual values
     features.update({
-        "bmi": bmi,
-        "physical_health": physical_health,
-        "mental_health": mental_health,
-        "sleep_time": sleep_time,
-        "heart_rate": 75,
-        "stress_level": 5,
-        "physical_activity_level": 30,
-        "sleep_quality": 7,
-        "daily_steps": 7000,
-        "bp_systolic": 120,
-        "bp_diastolic": 80,
-        "age_numeric": age_numeric,
-        "bmi_age": age_numeric * bmi,
-        "activity_stress": 150,
-        "smoking_Yes": int(smoking),
-        "alcohol_drinking_Yes": 0,
-        "stroke_Yes": int(stroke),
-        "diff_walking_Yes": int(diff_walking),
-        "sex_Male": int(sex_male),
-        "race_White": 1,
-        "diabetic_Yes": int(diabetic),
-        "physical_activity_Yes": int(physical_activity),
-        "age_bmi_risk": age_numeric * bmi / 200,
-        "health_risk_score": int(stroke) + int(diff_walking) + int(diabetic),
-        "high_age_risk": int(age_numeric >= 60)
+        'bmi': bmi,
+        'physical_health': physical_health,
+        'mental_health': mental_health,
+        'sleep_time': sleep_time,
+        'heart_rate': 75,
+        'stress_level': 5,
+        'physical_activity_level': 30,
+        'sleep_quality': 7,
+        'daily_steps': 7000,
+        'bp_systolic': 120,
+        'bp_diastolic': 80,
+        'age_numeric': age_numeric,
+        'bmi_age': age_numeric * bmi,
+        'activity_stress': 150,
+        'smoking_Yes': int(smoking),
+        'alcohol_drinking_Yes': 0,
+        'stroke_Yes': int(stroke),
+        'diff_walking_Yes': int(diff_walking),
+        'sex_Male': int(sex_male),
+        'race_White': 1,
+        'diabetic_Yes': int(diabetic),
+        'physical_activity_Yes': int(physical_activity),
+        'age_bmi_risk': age_numeric * bmi / 200,
+        'health_risk_score': int(stroke) + int(diff_walking) + int(diabetic),
+        'high_age_risk': int(age_numeric >= 60)
     })
-
+    
     # Set appropriate age category
     if age_numeric >= 80:
-        features["age_category_80 or older"] = 1
-    elif age_numeric >= 25:
-        for category in ["25-29", "30-34", "35-39", "40-44", "45-49", "50-54",
-                        "55-59", "60-64", "65-69", "70-74", "75-79"]:
-            start, end = map(int, category.split("-"))
-            if start <= age_numeric <= end:
-                features[f"age_category_{category}"] = 1
-                break
-
-    return pd.DataFrame([features])[FEATURE_NAMES]
-
+        features['age_category_80 or older'] = 1
+    elif 25 <= age_numeric < 80:
+        category = None
+        if 25 <= age_numeric <= 29: category = '25-29'
+        elif 30 <= age_numeric <= 34: category = '30-34'
+        elif 35 <= age_numeric <= 39: category = '35-39'
+        elif 40 <= age_numeric <= 44: category = '40-44'
+        elif 45 <= age_numeric <= 49: category = '45-49'
+        elif 50 <= age_numeric <= 54: category = '50-54'
+        elif 55 <= age_numeric <= 59: category = '55-59'
+        elif 60 <= age_numeric <= 64: category = '60-64'
+        elif 65 <= age_numeric <= 69: category = '65-69'
+        elif 70 <= age_numeric <= 74: category = '70-74'
+        elif 75 <= age_numeric <= 79: category = '75-79'
+        
+        if category:
+            features[f'age_category_{category}'] = 1
+    
+    return pd.DataFrame([features])[FEATURE_ORDER]
 
 def main():
     st.set_page_config(page_title="Heart Disease Risk Assessment", layout="wide")
@@ -142,11 +149,8 @@ def main():
                 physical_activity=physical_activity
             )
             
-            # Scale features
-            scaled_input = scaler.transform(input_df)
-            
             # Make prediction
-            prediction_prob = model.predict_proba(scaled_input)[0, 1]
+            prediction_prob = model.predict_proba(input_df)[0, 1]
             prediction = 1 if prediction_prob >= threshold else 0
             
             # Display results
