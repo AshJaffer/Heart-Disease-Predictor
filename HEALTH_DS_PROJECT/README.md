@@ -14,7 +14,7 @@ Create Virtual Environment
     python -m venv venv
     source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-Needed Tools/Dependancies
+Needed Tools/Dependencies
 
     -Python 3.7+
     -Streamlit
