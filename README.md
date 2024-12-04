@@ -5,6 +5,8 @@ AI-Powered Heart Disease Predictor Model
 
 Demo Screenshots
 
+<img width="1296" alt="Screenshot 2024-12-04 at 4 51 01 PM" src="https://github.com/user-attachments/assets/7685b57f-dcc2-465a-835e-3608a14567f3">
+
 
 Setup (clone repo)
 
