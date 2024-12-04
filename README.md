@@ -105,4 +105,26 @@ Lessons Learned
 
     This was my first machine learning project, with a topic I'm passionate about it being healthcare. 
     The biggest lesson I've learned from it is to balance the model's complexity and accuracy with interpretability. 
-    While more complex models sometimes provide slightly better accuracy, the ability to explain the model's output to users and create benefits is paramount.
+    While more complex models sometimes provide slightly better accuracy, the ability to explain the model's
+    output to users and create benefits is paramount.
+
+Citations
+
+    Heart Disease Dataset (2020)
+
+        Source: Centers for Disease Control and Prevention (CDC)
+        Title: Heart Disease Health Indicators Dataset
+        Publisher: Kaggle
+        URL: https://www.kaggle.com/datasets/kamilpytlak/personal-key-indicators-of-heart-disease
+        Year: 2020
+        Description: Collection of 400k+ adult survey responses from CDC's BRFSS 2020, 
+        focusing on key indicators of heart disease
+
+    Sleep Health and Lifestyle Dataset
+
+        Source: Inspired by real-world sleep studies and health monitoring data
+        Title: Sleep Health and Lifestyle Dataset
+        Publisher: Kaggle
+        URL: https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset
+        Description: Data on sleep patterns, physical health metrics, and lifestyle
+        choices of 400 individuals
