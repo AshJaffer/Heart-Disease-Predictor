@@ -1,6 +1,7 @@
 AI-Powered Heart Disease Predictor Model
 
-    The project is an AI-powered heart disease risk prediction model that assesses a user’s risk of heart disease based on various lifestyle factors and health history. 
+    The project is an AI-powered heart disease risk prediction model that assesses a user’s risk of heart disease based on various lifestyle factors and 
+    health history. 
 
 Demo Screenshots
 
