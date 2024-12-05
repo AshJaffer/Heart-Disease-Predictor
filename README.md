@@ -128,3 +128,8 @@ Citations
         URL: https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset
         Description: Data on sleep patterns, physical health metrics, and lifestyle
         choices of 400 individuals
+
+Creator
+
+    Ashhad Jaffer
+    ajaffer@umich.edu
