@@ -123,3 +123,4 @@ Several challenges were addressed during development:
 ## Contact Information
 - Creator: Ashhad Jaffer
 - Email: ajaffer@umich.edu
+- https://www.linkedin.com/in/ash0707/
